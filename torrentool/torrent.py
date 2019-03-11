@@ -5,6 +5,8 @@ from functools import reduce
 from hashlib import sha1
 from os import walk, sep
 from os.path import join, isdir, getsize, normpath, basename
+import ftfy
+
 
 try:
     from urllib.parse import urlencode
@@ -122,7 +124,19 @@ class Torrent(object):
             base = info['name']
 
             for f in info['files']:
-                files.append(TorrentFile(join(base, *f['path']), f['length']))
+                try:
+                    files.append(TorrentFile(join(base, *f['path']), f['length']))
+                except TypeError:
+                    fpath = [*f['path']]
+                    npath = list()
+                    for fp in fpath:
+                        if isinstance(fp, bytes):
+                            gp = ftfy.guess_bytes(fp)
+                            fp = fp.decode(gp[1])
+                        npath.append(fp)
+                    files.append(TorrentFile(join(base, *npath), f['length']))
+
+
 
         else:
             files.append(TorrentFile(info['name'], info['length']))
